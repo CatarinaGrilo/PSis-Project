@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <ncurses.h>
-
-
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "chase.h"
 
 WINDOW * message_win;
@@ -32,7 +35,7 @@ void draw_player(WINDOW *win, player_position_t * player, int delete){
     wrefresh(win);
 }
 
-void moove_player (player_position_t * player, int direction){
+void move_player (player_position_t * player, int direction){
     if (direction == KEY_UP){
         if (player->y  != 1){
             player->y --;
@@ -56,40 +59,125 @@ void moove_player (player_position_t * player, int direction){
     }
 }
 
+direction find_direction(int key){
+    
+    direction i;
+    switch (key){
+        case KEY_UP:
+            i = UP;
+            break;
+        case KEY_DOWN:
+            i = DOWN;
+            break;
+        case KEY_LEFT:
+            i = LEFT;
+            break;
+        case KEY_RIGHT:
+            i = RIGHT;
+            break;
+    }
+
+    return i;
+}   
+
+
 player_position_t p1;
 
 int main(){
+
+    /* Open and link socket */
+    int sock_fd;
+    sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+    if (sock_fd == -1){
+	    perror("socket: ");
+	    exit(-1);
+    }
+    struct sockaddr_un local_client_addr;
+    local_client_addr.sun_family = AF_UNIX;
+    sprintf(local_client_addr.sun_path,"%s_%d", SOCKET_NAME, getpid());
+
+    unlink(local_client_addr.sun_path);
+    int err = bind(sock_fd, (const struct sockaddr *) &local_client_addr, sizeof(local_client_addr));
+    if(err == -1){
+        perror("bind");
+        exit(-1);
+    }
+    struct sockaddr_un server_addr;
+    server_addr.sun_family = AF_UNIX;
+    strcpy(server_addr.sun_path, SOCKET_NAME);
+
+
+    /* Send connect message*/
+    char ch;
+    remote_char_t msg_send, msg_rcv;
+
+    do{
+        printf("What is your character (a...z)?: ");
+        ch = getchar();
+        ch = tolower(ch);  
+    }while(!isalpha(ch));
+
+    /* Send Connection Message*/
+    msg_send.type = 0; 
+    msg_send.ch = ch;    
+
+    sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
+            (const struct sockaddr *)&server_addr, sizeof(server_addr));
+
+    /* Receives Ball Information */       
+    do{
+        recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
+    }while(msg_rcv.type != 1);
+
+    
+
 	initscr();		    	/* Start curses mode 		*/
 	cbreak();				/* Line buffering disabled	*/
     keypad(stdscr, TRUE);   /* We get F1, F2 etc..		*/
 	noecho();			    /* Don't echo() while we do getch */
 
-    /* creates a window and draws a border */
+
+    /* Creates a window and draws a border */
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
     keypad(my_win, true);
-    /* creates a window and draws a border */
+    /* Creates a window for movements and draws a border  */
     message_win = newwin(5, WINDOW_SIZE, WINDOW_SIZE, 0);
     box(message_win, 0 , 0);	
 	wrefresh(message_win);
 
 
-    new_player(&p1, 'y');
+    new_player(&p1, ch);
     draw_player(my_win, &p1, true);
 
     int key = -1;
     while(key != 27 && key!= 'q'){
-        key = wgetch(my_win);		
+        key = wgetch(my_win);	
         if (key == KEY_LEFT || key == KEY_RIGHT || key == KEY_UP || key == KEY_DOWN){
+            
+            /* Sends Ball Movement mesage*/
+            msg_send.type = 2;
+            msg_send.ch = ch;
+            msg_send.direction = find_direction(key);
+            sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
+                (const struct sockaddr *)&server_addr, sizeof(server_addr));
+
+            /* Draw new position*/
             draw_player(my_win, &p1, false);
-            moove_player (&p1, key);
+            move_player (&p1, key);
             draw_player(my_win, &p1, true);
 
         }
 
         mvwprintw(message_win, 1,1,"%c key pressed", key);
         wrefresh(message_win);	
+    }
+    if(key == 'q'){
+        msg_send.type = 5;
+        sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
+            (const struct sockaddr *)&server_addr, sizeof(server_addr));
+        endwin();
     }
 
     exit(0);
