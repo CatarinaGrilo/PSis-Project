@@ -7,5 +7,8 @@ chase-client: chase-client.c chase.h
 chase-server: chase-server.c chase.h
 	gcc -Wall -pedantic chase-server.c -g -o chase-server -lncurses
 
+chase-bot: chase-bot.c chase.h
+	gcc -Wall -pedantic chase-bot.c -g -o chase-bot -lncurses
+
 clean:
 	rm chase-client chase-server
