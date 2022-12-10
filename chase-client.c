@@ -171,10 +171,10 @@ int main(){
                     if(msg_rcv.clients[i].id !=-1 && msg_rcv.clients[i].ch!=ch){
                         wmove(my_win, msg_rcv.clients[i].pos_x, msg_rcv.clients[i].pos_y);
                         waddch(my_win,msg_rcv.clients[i].ch);
-                        mvwprintw(message_win, i+2,1,"%c %d", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
+                        mvwprintw(message_win, i+2,1,"%c %d ", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
                         wrefresh(my_win);
                     }else if(msg_rcv.clients[i].ch==ch){
-                        mvwprintw(message_win, 1,1,"%c %d", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
+                        mvwprintw(message_win, 1,1,"%c %d ", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
                     }
                     if(msg_rcv.bots[i].id !=-1){
                         wmove(my_win, msg_rcv.bots[i].pos_x, msg_rcv.bots[i].pos_y);

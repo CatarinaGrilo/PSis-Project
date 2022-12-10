@@ -14,8 +14,7 @@ typedef struct ch_info_t{
     int pos_x, pos_y;
     int health;
 } ch_info_t;
-typedef enum direction
-{
+typedef enum direction{
     UP,
     DOWN,
     LEFT,
@@ -30,8 +29,7 @@ typedef enum direction
     4 - Health 0:           server -> client
     5 - Disconnect:         client -> server
  */
-typedef struct remote_char_t
-{
+typedef struct remote_char_t{
     int type;
     char ch;
     direction direction;

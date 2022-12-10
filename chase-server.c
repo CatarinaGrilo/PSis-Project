@@ -61,8 +61,7 @@ void remove_client(ch_info_t char_data[], int i){
     char_data[i].pos_y = 0;
 }
 
-int main()
-{	
+int main(){	
     
     ch_info_t client_data[MAX_ARRAY];
     ch_info_t bot_data[MAX_ARRAY];
@@ -120,14 +119,14 @@ int main()
     int n_bytes;
     int ch_pos;
     int indice;
+    int i;
     remote_char_t msg;
 
     direction  direction;
     struct sockaddr_un client_addr;
     socklen_t client_addr_size = sizeof(struct sockaddr_un);
 
-    while (1)
-    {
+    while (1){
 
         n_bytes = recvfrom(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (struct sockaddr *)&client_addr, &client_addr_size);
@@ -139,8 +138,9 @@ int main()
             ch = msg.ch;
             pos_x = WINDOW_SIZE/2;
             pos_y = WINDOW_SIZE/2;
+
             /*Client is not a bot*/
-            if(ch!='*'){
+            if(ch != '*'){
                 /* Stores Information */
                 indice = find_free_spot(client_data);
                 
@@ -159,7 +159,7 @@ int main()
                 mvwprintw(message_win, indice+1,1,"%c %d", client_data[indice].ch, client_data[indice].health);
 
             /*Client is a bot*/
-            }else if(ch=='*'){
+            }else if(ch == '*'){
                 indice = find_free_spot(bot_data);
                 //if (indice == -1){}
                     /* Quando já há 10 clientes, decidir o que fazer*/
@@ -179,6 +179,7 @@ int main()
             sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                     (const struct sockaddr *) &client_addr, client_addr_size);
         }
+        /* Ball Movement message */
         else if(msg.type == 2){
             ch_pos = find_ch_info(client_data, msg.ch);
             if(ch_pos != -1){
@@ -198,9 +199,32 @@ int main()
                 client_data[ch_pos].pos_y = pos_y;
                 //mvwprintw(my_win, 1,1,"HERE %d, %d\n", client_data[ch_pos].pos_y, client_data[ch_pos].pos_x);
 
+                /* Check if a ball moved onto another object */
+                for(i = 0 ; i < MAX_ARRAY; i++){
+                    /* Ball rammed into another ball*/
+                    if(client_data[i].pos_x == pos_x && 
+                       client_data[i].pos_y == pos_y && 
+                       client_data[i].ch != ch){
+                        client_data[i].health--;
+                        if(client_data[ch_pos].health < 10)
+                            client_data[ch_pos].health++;
+                        mvwprintw(message_win, i+1,1,"%c %d ", client_data[i].ch, client_data[i].health);
+                    }
+                    /* Bot rammed into a bot */
+                        // TO DO
+                    /* Ball rammed into a prize */
+                    if(prizes_data[i].pos_x == pos_x &&
+                       prizes_data[i].pos_y == pos_y){
+                        client_data[ch_pos].health += prizes_data[i].id;
+                        if (client_data[ch_pos].health > 10)
+                            client_data[ch_pos] = 10;
+                    }
+                }
+
+
                 /* Send Field Status Message*/
                 msg.type = 3;
-                for (int i = 0 ; i < MAX_ARRAY; i++){
+                for (i = 0 ; i < MAX_ARRAY; i++){
                     msg.clients[i].id = client_data[i].id;
                     msg.clients[i].ch = client_data[i].ch;
                     msg.clients[i].pos_x = client_data[i].pos_x;
@@ -226,9 +250,11 @@ int main()
             }
             wmove(my_win, pos_x, pos_y);
             waddch(my_win,ch| A_BOLD);
-            mvwprintw(message_win, ch_pos+1,1,"%c %d", client_data[ch_pos].ch, client_data[ch_pos].health);
+            mvwprintw(message_win, ch_pos+1,1,"%c %d ", client_data[ch_pos].ch, client_data[ch_pos].health);
             
-        }else if(msg.type == 5){
+        }
+        /* Disconnect Message*/
+        else if(msg.type == 5){
             ch_pos = find_ch_info(client_data, msg.ch);
             if(ch_pos != -1){
                 pos_x = client_data[ch_pos].pos_x;
