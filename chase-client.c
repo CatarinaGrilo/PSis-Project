@@ -162,15 +162,38 @@ int main(){
             msg_send.direction = find_direction(key);
             sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
                 (const struct sockaddr *)&server_addr, sizeof(server_addr));
-
+            recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
+            if(msg_rcv.type==3){
+                wclear(my_win);
+                box(my_win, 0 , 0);
+                wrefresh(my_win);
+                for(int i = 0 ; i < MAX_ARRAY; i++){
+                    if(msg_rcv.clients[i].id !=-1 && msg_rcv.clients[i].ch!=ch){
+                        wmove(my_win, msg_rcv.clients[i].pos_x, msg_rcv.clients[i].pos_y);
+                        waddch(my_win,msg_rcv.clients[i].ch);
+                        mvwprintw(message_win, i+2,1,"%c %d", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
+                        wrefresh(my_win);
+                    }else if(msg_rcv.clients[i].ch==ch){
+                        mvwprintw(message_win, 1,1,"%c %d", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
+                    }
+                    if(msg_rcv.bots[i].id !=-1){
+                        wmove(my_win, msg_rcv.bots[i].pos_x, msg_rcv.bots[i].pos_y);
+                        waddch(my_win,msg_rcv.bots[i].ch);
+                        wrefresh(my_win);
+                    }
+                    if(msg_rcv.prizes[i].id !=-1){
+                        wmove(my_win, msg_rcv.prizes[i].pos_x, msg_rcv.prizes[i].pos_y);
+                        waddch(my_win,msg_rcv.clients[i].ch);
+                        wrefresh(my_win);
+                    }
+                }
+            }
             /* Draw new position*/
             draw_player(my_win, &p1, false);
             move_player (&p1, key);
             draw_player(my_win, &p1, true);
 
         }
-
-        mvwprintw(message_win, 1,1,"%c key pressed", key);
         wrefresh(message_win);	
     }
     if(key == 'q'){

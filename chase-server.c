@@ -55,6 +55,7 @@ int find_free_spot(ch_info_t char_data[]){
 }
 
 void remove_client(ch_info_t char_data[], int i){
+    char_data[i].id= -1;
     char_data[i].ch = ' ';
     char_data[i].pos_x = 0;
     char_data[i].pos_y = 0;
@@ -73,6 +74,8 @@ int main()
         client_data[i].ch = ' ';
         bot_data[i].id = -1;
         bot_data[i].ch = ' ';
+        prizes_data[i].id = -1;
+        prizes_data[i].ch = ' ';
     }
 
     /* Open and link socket */
@@ -140,26 +143,35 @@ int main()
                 //if (indice == -1){}
                     /* Quando já há 10 clientes, decidir o que fazer*/
                 
+                client_data[indice].id= num_clients;
                 client_data[indice].ch = ch;
                 client_data[indice].pos_x = pos_x;
                 client_data[indice].pos_y = pos_y;
+                client_data[indice].health = 10;
                 num_clients++;
                 /* draw mark on new position */
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,ch| A_BOLD);
+
+            /*Client is a bot*/
             }else if(ch=='*'){
                 indice = find_free_spot(bot_data);
                 //if (indice == -1){}
                     /* Quando já há 10 clientes, decidir o que fazer*/
+
+                bot_data[indice].id= num_bots;
                 bot_data[indice].ch = ch;
                 bot_data[indice].pos_x = pos_x;
                 bot_data[indice].pos_y = pos_y;
                 num_bots++;
+                /* draw mark on new position */
+                wmove(my_win, pos_x, pos_y);
+                waddch(my_win,ch| A_BOLD);
 
             }
             /* Send Ball Information Message*/
             msg.type = 1; 
-            sendto(sock_fd, &msg, sizeof(msg), 0, 
+            sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                     (const struct sockaddr *) &client_addr, client_addr_size);
         }
         else if(msg.type == 2){
@@ -179,21 +191,34 @@ int main()
                 new_position(&pos_x, &pos_y, direction);
                 client_data[ch_pos].pos_x = pos_x;
                 client_data[ch_pos].pos_y = pos_y;
-            }   
-            // int same = -1;  
-            // for(int i = 0 ; i< n_chars; i++){
-            //     if(char_data[i].pos_x == pos_x && char_data[i].pos_x){
-            //         same ++;
-            //     }
-            // }
-            // msg.type = 2;  
-            // if (same > 0){
-            //     msg.type = 3;              
-            // } 
-            // sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
-            //         (const struct sockaddr *) &client_addr, client_addr_size);
+                //mvwprintw(my_win, 1,1,"HERE %d, %d\n", client_data[ch_pos].pos_y, client_data[ch_pos].pos_x);
 
-            /* draw mark on new position */
+                /* Send Field Status Message*/
+                msg.type = 3;
+                for (int i = 0 ; i < MAX_ARRAY; i++){
+                    msg.clients[i].id = client_data[i].id;
+                    msg.clients[i].ch = client_data[i].ch;
+                    msg.clients[i].pos_x = client_data[i].pos_x;
+                    msg.clients[i].pos_y = client_data[i].pos_y;
+                    msg.clients[i].health = client_data[i].health;
+
+                    msg.bots[i].id = bot_data[i].id;
+                    msg.bots[i].ch = bot_data[i].ch;
+                    msg.bots[i].pos_x = bot_data[i].pos_x;
+                    msg.bots[i].pos_y = bot_data[i].pos_y;
+                    msg.bots[i].health = bot_data[i].health;
+
+                    msg.prizes[i].id = prizes_data[i].id;
+                    msg.prizes[i].ch = prizes_data[i].ch;
+                    msg.prizes[i].pos_x = prizes_data[i].pos_x;
+                    msg.prizes[i].pos_y = prizes_data[i].pos_y;
+                    msg.prizes[i].health = prizes_data[i].health;
+                }
+
+                //mvwprintw(my_win, 3,1,"BLA %d, %d\n", msg.clients[0].pos_y, msg.clients[0].pos_x);
+                sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
+                    (const struct sockaddr *) &client_addr, client_addr_size);
+            }
             wmove(my_win, pos_x, pos_y);
             waddch(my_win,ch| A_BOLD);	
             
@@ -213,7 +238,7 @@ int main()
         }	
         wrefresh(my_win);	
     }
-  	endwin();			/* End curses mode		  */
+  	endwin();			/* End curses mode*/
 
 	return 0;
 }
