@@ -108,6 +108,10 @@ int main()
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
+    /* Creates a window for health of players and draws a border  */
+    WINDOW * message_win = newwin(5, WINDOW_SIZE, WINDOW_SIZE, 0);
+    box(message_win, 0 , 0);	
+	wrefresh(message_win);
 
 
     int ch;
@@ -152,6 +156,7 @@ int main()
                 /* draw mark on new position */
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,ch| A_BOLD);
+                mvwprintw(message_win, indice+1,1,"%c %d", client_data[indice].ch, client_data[indice].health);
 
             /*Client is a bot*/
             }else if(ch=='*'){
@@ -220,7 +225,8 @@ int main()
                     (const struct sockaddr *) &client_addr, client_addr_size);
             }
             wmove(my_win, pos_x, pos_y);
-            waddch(my_win,ch| A_BOLD);	
+            waddch(my_win,ch| A_BOLD);
+            mvwprintw(message_win, ch_pos+1,1,"%c %d", client_data[ch_pos].ch, client_data[ch_pos].health);
             
         }else if(msg.type == 5){
             ch_pos = find_ch_info(client_data, msg.ch);
@@ -229,14 +235,15 @@ int main()
                 pos_y = client_data[ch_pos].pos_y;
                 ch = client_data[ch_pos].ch;
                 /*deletes old place */
-                wmove(my_win, pos_y, pos_x);
+                wmove(my_win, pos_x, pos_y);
                 waddch(my_win,' ');
                 wrefresh(my_win);
                 remove_client(client_data, ch_pos);
                 num_clients--;
             }
         }	
-        wrefresh(my_win);	
+        wrefresh(my_win);
+        wrefresh(message_win);	
     }
   	endwin();			/* End curses mode*/
 

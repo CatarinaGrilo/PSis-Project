@@ -142,7 +142,7 @@ int main(){
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
     keypad(my_win, true);
-    /* Creates a window for movements and draws a border  */
+    /* Creates a window for health of players and draws a border  */
     message_win = newwin(5, WINDOW_SIZE, WINDOW_SIZE, 0);
     box(message_win, 0 , 0);	
 	wrefresh(message_win);
