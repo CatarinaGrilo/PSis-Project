@@ -210,11 +210,12 @@ int main(){
 
                 /*Client is a bot*/
                 }else if(ch == '*'){
+                    /* Stores Information */
                     indice = find_free_spot(bot_data);
                     //if (indice == -1){}
                         /* Quando já há 10 clientes, decidir o que fazer*/
 
-                    bot_data[indice].id= num_bots;
+                    bot_data[indice].id = num_bots;
                     bot_data[indice].ch = ch;
                     bot_data[indice].pos_x = pos_x;
                     bot_data[indice].pos_y = pos_y;
@@ -241,10 +242,10 @@ int main(){
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,' ');
 
-                /* calculates new direction */
+                /* Calculates new direction */
                 direction = msg.direction;
 
-                /* calculates new mark position */
+                /* Calculates new mark position */
                 new_position(&pos_x, &pos_y, direction);
                 client_data[ch_pos].pos_x = pos_x;
                 client_data[ch_pos].pos_y = pos_y;
@@ -332,6 +333,7 @@ int main(){
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,' ');
                 wrefresh(my_win);
+                mvwprintw(message_win, ch_pos+1,1,"         ");
                 remove_from_game(client_data, ch_pos);
                 num_clients--;
             }
