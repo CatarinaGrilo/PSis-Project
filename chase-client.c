@@ -190,15 +190,17 @@ int main(){
                         wrefresh(my_win);
                     }
                 }
-            }if(msg_rcv.type==4){
-                key = 'q';
+            }else if(msg_rcv.type == 4){
+                endwin();
+                printf("\n You have reached 0 Health.\n\n");
+                break;
             }
-            /* Draw new position*/
-            draw_player(my_win, &p1, false);
-            move_player (&p1, key);
-            draw_player(my_win, &p1, true);
-
         }
+
+        /* Draw new position*/
+        draw_player(my_win, &p1, false);
+        move_player (&p1, key);
+        draw_player(my_win, &p1, true);
         wrefresh(message_win);	
     }
     if(key == 'q'){

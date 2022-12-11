@@ -110,7 +110,7 @@ int main(){
 	noecho();			    /* Don't echo() while we do getch */
 
 
-    /* creates a window and draws a border */
+    /* Creates a window and draws a border */
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
@@ -179,59 +179,61 @@ int main(){
 
         n_bytes = recvfrom(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (struct sockaddr *)&client_addr, &client_addr_size);
-        if (n_bytes!= sizeof(remote_char_t)){
+        if (n_bytes != sizeof(remote_char_t)){
             continue;
         }
         /* Connect Message */
         if(msg.type == 0){
-            ch = msg.ch;
-            pos_x = WINDOW_SIZE/2;
-            pos_y = WINDOW_SIZE/2;
+            if(num_clients <= 10){
+                ch = msg.ch;
+                pos_x = WINDOW_SIZE/2;
+                pos_y = WINDOW_SIZE/2;
 
-            /*Client is not a bot*/
-            if(ch != '*'){
-                /* Stores Information */
-                indice = find_free_spot(client_data);
-                
-                //if (indice == -1){}
-                    /* Quando já há 10 clientes, decidir o que fazer*/
-                
-                client_data[indice].id= num_clients;
-                client_data[indice].ch = ch;
-                client_data[indice].pos_x = pos_x;
-                client_data[indice].pos_y = pos_y;
-                client_data[indice].health = 10;
-                num_clients++;
-                /* draw mark on new position */
-                wmove(my_win, pos_x, pos_y);
-                waddch(my_win,ch| A_BOLD);
-                mvwprintw(message_win, indice+1,1,"%c %d", client_data[indice].ch, client_data[indice].health);
+                /*Client is not a bot*/
+                if(ch != '*'){
+                    /* Stores Information */
+                    indice = find_free_spot(client_data);
+                    
+                    //if (indice == -1){}
+                        /* Quando já há 10 clientes, decidir o que fazer*/
+                    
+                    client_data[indice].id= num_clients;
+                    client_data[indice].ch = ch;
+                    client_data[indice].pos_x = pos_x;
+                    client_data[indice].pos_y = pos_y;
+                    client_data[indice].health = 10;
+                    num_clients++;
+                    /* draw mark on new position */
+                    wmove(my_win, pos_x, pos_y);
+                    waddch(my_win,ch| A_BOLD);
+                    mvwprintw(message_win, indice+1,1,"%c %d", client_data[indice].ch, client_data[indice].health);
 
-            /*Client is a bot*/
-            }else if(ch == '*'){
-                indice = find_free_spot(bot_data);
-                //if (indice == -1){}
-                    /* Quando já há 10 clientes, decidir o que fazer*/
+                /*Client is a bot*/
+                }else if(ch == '*'){
+                    indice = find_free_spot(bot_data);
+                    //if (indice == -1){}
+                        /* Quando já há 10 clientes, decidir o que fazer*/
 
-                bot_data[indice].id= num_bots;
-                bot_data[indice].ch = ch;
-                bot_data[indice].pos_x = pos_x;
-                bot_data[indice].pos_y = pos_y;
-                num_bots++;
-                /* draw mark on new position */
-                wmove(my_win, pos_x, pos_y);
-                waddch(my_win,ch| A_BOLD);
+                    bot_data[indice].id= num_bots;
+                    bot_data[indice].ch = ch;
+                    bot_data[indice].pos_x = pos_x;
+                    bot_data[indice].pos_y = pos_y;
+                    num_bots++;
+                    /* draw mark on new position */
+                    wmove(my_win, pos_x, pos_y);
+                    waddch(my_win,ch| A_BOLD);
 
+                }
+                /* Send Ball Information Message*/
+                msg.type = 1; 
+                sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
+                        (const struct sockaddr *) &client_addr, client_addr_size);
             }
-            /* Send Ball Information Message*/
-            msg.type = 1; 
-            sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
-                    (const struct sockaddr *) &client_addr, client_addr_size);
         }
         /* Ball Movement message */
         else if(msg.type == 2){
             ch_pos = find_ch_info(client_data, msg.ch);
-            if(ch_pos != -1 && client_data[ch_pos].health>0){
+            if(ch_pos != -1 && client_data[ch_pos].health > 0){
                 pos_x = client_data[ch_pos].pos_x;
                 pos_y = client_data[ch_pos].pos_y;
                 ch = client_data[ch_pos].ch;
@@ -251,10 +253,9 @@ int main(){
                 /* Check if a ball moved onto another object */
                 for(i = 0 ; i < MAX_ARRAY; i++){
                     /* Ball rammed into another ball*/
-                    if(client_data[i].pos_x == pos_x && 
-                       client_data[i].pos_y == pos_y && 
-                       client_data[i].ch != ch){
-                        client_data[i].health--;
+                    if(client_data[i].pos_x == pos_x && client_data[i].pos_y == pos_y && client_data[i].ch != ch){
+                        if(client_data[i].health > 0)
+                            client_data[i].health--;
                         if(client_data[ch_pos].health < 10)
                             client_data[ch_pos].health++;
                         mvwprintw(message_win, i+1,1,"%c %d ", client_data[i].ch, client_data[i].health);
@@ -262,8 +263,7 @@ int main(){
                     /* Bot rammed into a bot */
                         // TO DO
                     /* Ball rammed into a prize */
-                    if(prizes_data[i].pos_x == pos_x &&
-                       prizes_data[i].pos_y == pos_y){
+                    if(prizes_data[i].pos_x == pos_x && prizes_data[i].pos_y == pos_y){
                         client_data[ch_pos].health += (prizes_data[i].ch-48);
                         remove_from_game(prizes_data, i);
                         if (client_data[ch_pos].health > 10)
@@ -301,21 +301,23 @@ int main(){
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,ch| A_BOLD);
                 mvwprintw(message_win, ch_pos+1,1,"%c %d ", client_data[ch_pos].ch, client_data[ch_pos].health);
-            }if(client_data[ch_pos].health<1){
-
-                /* Send Health 0 Message*/
+            }
+            /* Send Health 0 Message*/
+            else if(client_data[ch_pos].health == 0){
+                /* Send Healt 0 Message to client*/
                 msg.type = 4;
                 sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                     (const struct sockaddr *) &client_addr, client_addr_size);
+                /* Clean up array in server */
                 pos_x = client_data[ch_pos].pos_x;
                 pos_y = client_data[ch_pos].pos_y;
                 ch = client_data[ch_pos].ch;
-                /*deletes old place */
-                wmove(my_win, pos_x, pos_y);
-                waddch(my_win,' ');
-                wrefresh(my_win);
                 remove_from_game(client_data, ch_pos);
                 num_clients--;
+                /* Deletes player from screen */
+                wmove(my_win, pos_x, pos_y);
+                waddch(my_win,' ');
+                mvwprintw(message_win, ch_pos+1,1,"         ");
             }
             
         }
