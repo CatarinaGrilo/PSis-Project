@@ -69,7 +69,7 @@ int main(){
     ch_info_t bot_data[MAX_ARRAY];
     ch_info_t prizes_data[MAX_ARRAY];
     int num_clients = 0, num_bots = 0;
-    clock_t begin = clock();
+    clock_t begin = time(NULL);;
     clock_t end;
     double time_spent;
 
@@ -156,9 +156,9 @@ int main(){
     while (1){
 
         //EVETY 5SEC PUT ONE MORE PRIZE : NOT WORKING I DONT KNOW WHY, THE CLOCK_PER_SEC
-        /*end = clock();
-        time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        mvwprintw(my_win, 2,1,"here:%ld %ld %ld", begin, end, (end-begin)/CLOCKS_PER_SEC);
+        end = time(NULL);
+        time_spent = end - begin;
+        //mvwprintw(my_win, 2,1,"here:%f", time_spent);
         if(time_spent > 5){
             i=0; j=0;
             while(i<MAX_ARRAY && j<1){
@@ -174,8 +174,8 @@ int main(){
                 }
                 i++;
             }
-            begin = clock();
-        }*/
+            begin = time(NULL);
+        }
 
         n_bytes = recvfrom(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (struct sockaddr *)&client_addr, &client_addr_size);
