@@ -5,7 +5,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 #include "chase.h"
+
 
 WINDOW * message_win;
 int sleep_delay = 3000000;
@@ -20,6 +22,45 @@ void new_player (player_position_t * player, char c){
     player->x = WINDOW_SIZE/2;
     player->y = WINDOW_SIZE/2;
     player->c = c;
+}
+
+direction randomDirection(){
+
+    srand ( time(NULL) ); 
+    int randomnumber = rand() % 4;
+    //printf("%d\n", randomnumber);
+
+    if(randomnumber == 0)
+        return UP;
+    else if(randomnumber == 1)
+        return DOWN;
+    else if(randomnumber == 2)
+        return LEFT;
+    else if(randomnumber == 3)
+        return RIGHT;
+    
+    return -1;
+}
+
+
+void print_direction(direction direction){
+    
+    switch (direction)   {
+        case UP: 
+            printf("UP\n");
+            break;
+        case DOWN:
+            printf("DOWN\n");
+            break;
+        case LEFT:
+            printf("LEFT\n");
+            break;
+        case RIGHT:
+            printf("RIGHT\n");
+            break;
+   }
+   printf("What?");
+   return;
 }
 
 player_position_t p1;
@@ -57,7 +98,7 @@ int main(){
     msg_send.type = 0; 
     msg_send.ch = '*';    
     for (i = 0; i < number_bots; i++){
-        msg_send.bots->id = i;
+        msg_send.id = i;
         sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
                 (const struct sockaddr *)&server_addr, sizeof(server_addr));  
         /* Wait to receive ball information*/
@@ -66,21 +107,22 @@ int main(){
             recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
         }while(msg_rcv.type != 1);
     }
-    //printf("Done\n");
+    printf("Done\n");
 
     new_player(&p1, ch); // acho q nao é assim
-    direction dir = LEFT;
 
     while (1){
     
         usleep(sleep_delay);
-        //random()%4)
+        
         for(i = 0; i < number_bots; i++){
-            //direction dir = direction[i];
             /* Send Ball Movement Message */
+            printf("Sending information\n");
             msg_send.type = 2;
             msg_send.ch = '*';
-            msg_send.direction = dir;
+            msg_send.direction = randomDirection();
+            //print_direction(msg_send.direction);
+            msg_send.id = i;
 
             sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
                 (const struct sockaddr *) &server_addr, sizeof(server_addr));

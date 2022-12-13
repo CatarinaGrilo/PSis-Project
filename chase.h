@@ -32,8 +32,10 @@ typedef enum direction{
 typedef struct remote_char_t{
     int type;
     char ch;
+    int id;
     direction direction;
     ch_info_t clients[MAX_ARRAY];
     ch_info_t bots[MAX_ARRAY];
     ch_info_t prizes[MAX_ARRAY];
 } remote_char_t;
+

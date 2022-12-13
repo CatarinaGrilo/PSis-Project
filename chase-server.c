@@ -215,7 +215,7 @@ int main(){
                     //if (indice == -1){}
                         /* Quando já há 10 clientes, decidir o que fazer*/
 
-                    bot_data[indice].id = num_bots;
+                    bot_data[indice].id = msg.id;
                     bot_data[indice].ch = ch;
                     bot_data[indice].pos_x = pos_x;
                     bot_data[indice].pos_y = pos_y;
@@ -320,7 +320,49 @@ int main(){
                 waddch(my_win,' ');
                 mvwprintw(message_win, ch_pos+1,1,"         ");
             }
-            
+            else if(msg.ch == '*'){
+                ch_pos = msg.id;
+                pos_x = bot_data[ch_pos].pos_x;
+                pos_y = bot_data[ch_pos].pos_y;
+                ch = bot_data[ch_pos].ch;
+
+                /*deletes old place */
+                wmove(my_win, pos_x, pos_y);
+                waddch(my_win,' ');
+
+                /* Calculates new direction */
+                direction = msg.direction;
+
+                /* Calculates new mark position */
+                new_position(&pos_x, &pos_y, direction);
+                bot_data[ch_pos].pos_x = pos_x;
+                bot_data[ch_pos].pos_y = pos_y;
+
+                /* Check if a ball moved onto another object */
+                // for(i = 0 ; i < MAX_ARRAY; i++){
+                //     /* Ball rammed into another ball*/
+                //     if(client_data[i].pos_x == pos_x && client_data[i].pos_y == pos_y && client_data[i].ch != ch){
+                //         if(client_data[i].health > 0)
+                //             client_data[i].health--;
+                //         if(client_data[ch_pos].health < 10)
+                //             client_data[ch_pos].health++;
+                //         mvwprintw(message_win, i+1,1,"%c %d ", client_data[i].ch, client_data[i].health);
+                //     }
+                //     /* Bot rammed into a bot */
+                //         // TO DO
+                //     /* Ball rammed into a prize */
+                //     if(prizes_data[i].pos_x == pos_x && prizes_data[i].pos_y == pos_y){
+                //         client_data[ch_pos].health += (prizes_data[i].ch-48);
+                //         remove_from_game(prizes_data, i);
+                //         if (client_data[ch_pos].health > 10)
+                //             client_data[ch_pos].health = 10;
+                //     }
+                // }
+                
+                wmove(my_win, pos_x, pos_y);
+                waddch(my_win,ch| A_BOLD);
+                wrefresh(my_win);
+            }
         }
         /* Disconnect Message*/
         else if(msg.type == 5){
