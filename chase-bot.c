@@ -13,11 +13,6 @@ WINDOW * message_win;
 int sleep_delay = 3000000;
 
 
-typedef struct player_position_t{
-    int x, y;
-    char c;
-} player_position_t;
-
 void new_player (player_position_t * player, char c){
     player->x = WINDOW_SIZE/2;
     player->y = WINDOW_SIZE/2;
@@ -67,6 +62,9 @@ int main(){
 
     /* Open and link socket */
     int sock_fd;
+    char ADDRESS[20];
+    printf("Put the Address of server: ");
+    scanf("%s",ADDRESS); 
     sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sock_fd == -1){
 	    perror("socket: ");
@@ -74,7 +72,7 @@ int main(){
     }
     struct sockaddr_un local_client_addr;
     local_client_addr.sun_family = AF_UNIX;
-    sprintf(local_client_addr.sun_path,"%s_%d", SOCKET_NAME, getpid());
+    sprintf(local_client_addr.sun_path,"%s_%d", ADDRESS, getpid());
 
     unlink(local_client_addr.sun_path);
     int err = bind(sock_fd, (const struct sockaddr *) &local_client_addr, sizeof(local_client_addr));
@@ -84,13 +82,20 @@ int main(){
     }
     struct sockaddr_un server_addr;
     server_addr.sun_family = AF_UNIX;
-    strcpy(server_addr.sun_path, SOCKET_NAME);
+    strcpy(server_addr.sun_path, ADDRESS);
 
 
     char ch = '*';
-    int number_bots = 1, i = 0;
+    int number_bots=0, i = 0;
     remote_char_t msg_send, msg_rcv;
 
+    do{
+        printf("\nNumber of bots: ");
+        scanf("%d",&number_bots); 
+        if(number_bots < 1 || number_bots > 10){
+          printf("\nNumber of bots must be between 1-10.");  
+        }
+    }while(number_bots < 1 || number_bots > 10);
 
     /* Send Connection Message*/
     msg_send.type = 0; 
@@ -101,7 +106,7 @@ int main(){
                 (const struct sockaddr *)&server_addr, sizeof(server_addr));  
         /* Wait to receive ball information*/
         do{
-            //printf("Waiting\n");
+            printf("Waiting\n");
             recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
         }while(msg_rcv.type != 1);
     }
@@ -115,7 +120,7 @@ int main(){
             /* Send Ball Movement Message */
             printf("Sending information\n");
             msg_send.type = 2;
-            msg_send.ch = '*';
+            msg_send.ch = ch;
             msg_send.direction = randomDirection();
             //print_direction(msg_send.direction);
             msg_send.id = i;

@@ -1,6 +1,6 @@
 #define WINDOW_SIZE 20
 #define MAX_ARRAY 10
-#define SOCKET_NAME "/tmp/sock_Gamechase"
+#define SOCKET_NAME "/tmp/chaseGame"
 
 
 /*  Message type:

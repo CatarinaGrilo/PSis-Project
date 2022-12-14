@@ -26,22 +26,22 @@ void new_position(int *x, int *y, direction direction){
         case UP:
             (*x) --;
             if(*x ==0)
-                *x = 2;
+                *x = 1;
             break;
         case DOWN:
             (*x) ++;
             if(*x ==WINDOW_SIZE-1)
-                *x = WINDOW_SIZE-3;
+                *x = WINDOW_SIZE-2;
             break;
         case LEFT:
             (*y) --;
             if(*y ==0)
-                *y = 2;
+                *y = 1;
             break;
         case RIGHT:
             (*y) ++;
             if(*y ==WINDOW_SIZE-1)
-                *y = WINDOW_SIZE-3;
+                *y = WINDOW_SIZE-2;
             break;
         default:
             break;
@@ -99,7 +99,6 @@ remote_char_t setupFieldStatusmessage(ch_info_t client_data[], ch_info_t bot_dat
     
     return msg;
 }
-
 
 int main(){	
     
@@ -165,6 +164,7 @@ int main(){
             prizes_data[i].ch = rand() % 5 + 49;
             prizes_data[i].pos_x = rand() % (WINDOW_SIZE-2) + 1;
             prizes_data[i].pos_y = rand() % (WINDOW_SIZE-2) + 1;
+            map[prizes_data[i].pos_x][prizes_data[i].pos_y] = 3;
             j++;
             //mvwprintw(my_win, i+1,1,"%d %d %d ", prizes_data[i].ch, prizes_data[i].pos_x, prizes_data[i].pos_y);
         }
@@ -179,7 +179,7 @@ int main(){
     } 
 
 
-    int ch;
+    int ch, k = 0;
     int pos_x, old_pos_x;
     int pos_y, old_pos_y;
     int n_bytes;
@@ -254,6 +254,7 @@ int main(){
 
                 /*Client is a bot*/
                 }else if(ch == '*'){
+                    mvwprintw(message_win, 2,1,"Bot Connect");
                     /* Stores Information */
                     indice = find_free_spot(bot_data);
                     //if (indice == -1){}
@@ -284,6 +285,7 @@ int main(){
         /* Ball Movement message */
         else if(msg.type == 2){
             if(msg.ch != '*'){
+
                 ch_pos = find_ch_info(client_data, msg.ch);
                 if(ch_pos != -1 && client_data[ch_pos].health > 0){
                     /* Old Position*/
@@ -294,7 +296,9 @@ int main(){
                     /* Calculates new direction */
                     direction = msg.direction;
 
-                    /* Calculates new mark position */
+                    /* Calculates new mark position */  
+                    pos_x = old_pos_x;
+                    pos_y = old_pos_y;
                     new_position(&pos_x, &pos_y, direction);
                 
                     /* Check if new place is free */
@@ -348,27 +352,27 @@ int main(){
                     }
 
                     /* Send Field Status Message*/
-                    //msg = setupFieldStatusmessage(client_data, bot_data, prizes_data);
-                    msg.type = 3;
-                    for (int i = 0 ; i < MAX_ARRAY; i++){
-                        msg.clients[i].id = client_data[i].id;
-                        msg.clients[i].ch = client_data[i].ch;
-                        msg.clients[i].pos_x = client_data[i].pos_x;
-                        msg.clients[i].pos_y = client_data[i].pos_y;
-                        msg.clients[i].health = client_data[i].health;
+                    msg = setupFieldStatusmessage(client_data, bot_data, prizes_data);
+                    //msg.type = 3;
+                    // for (int i = 0 ; i < MAX_ARRAY; i++){
+                    //     msg.clients[i].id = client_data[i].id;
+                    //     msg.clients[i].ch = client_data[i].ch;
+                    //     msg.clients[i].pos_x = client_data[i].pos_x;
+                    //     msg.clients[i].pos_y = client_data[i].pos_y;
+                    //     msg.clients[i].health = client_data[i].health;
 
-                        msg.bots[i].id = bot_data[i].id;
-                        msg.bots[i].ch = bot_data[i].ch;
-                        msg.bots[i].pos_x = bot_data[i].pos_x;
-                        msg.bots[i].pos_y = bot_data[i].pos_y;
-                        msg.bots[i].health = bot_data[i].health;
+                    //     msg.bots[i].id = bot_data[i].id;
+                    //     msg.bots[i].ch = bot_data[i].ch;
+                    //     msg.bots[i].pos_x = bot_data[i].pos_x;
+                    //     msg.bots[i].pos_y = bot_data[i].pos_y;
+                    //     msg.bots[i].health = bot_data[i].health;
 
-                        msg.prizes[i].id = prizes_data[i].id;
-                        msg.prizes[i].ch = prizes_data[i].ch;
-                        msg.prizes[i].pos_x = prizes_data[i].pos_x;
-                        msg.prizes[i].pos_y = prizes_data[i].pos_y;
-                        msg.prizes[i].health = prizes_data[i].health;
-                    }
+                    //     msg.prizes[i].id = prizes_data[i].id;
+                    //     msg.prizes[i].ch = prizes_data[i].ch;
+                    //     msg.prizes[i].pos_x = prizes_data[i].pos_x;
+                    //     msg.prizes[i].pos_y = prizes_data[i].pos_y;
+                    //     msg.prizes[i].health = prizes_data[i].health;
+                    // }
     
 
                     //mvwprintw(my_win, 3,1,"BLA %d, %d\n", msg.clients[0].pos_y, msg.clients[0].pos_x);
@@ -378,7 +382,7 @@ int main(){
                     mvwprintw(message_win, ch_pos+1,1,"%c %d ", client_data[ch_pos].ch, client_data[ch_pos].health);
                 }
                 /* Send Health 0 Message*/
-                else if(ch_pos != -1 && client_data[ch_pos].health == 0){
+                else if(ch_pos != -1 && client_data[ch_pos].health < 1 ){
                     /* Send Healt 0 Message to client*/
                     msg.type = 4;
                     sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
@@ -407,6 +411,8 @@ int main(){
                 direction = msg.direction;
 
                 /* Calculates new mark position */
+                pos_x = old_pos_x;
+                pos_y = old_pos_y;
                 new_position(&pos_x, &pos_y, direction);
                 
 
@@ -423,53 +429,65 @@ int main(){
                     }
                 }else if(map[pos_x][pos_y] == 2){ // Bot is in new position
                     // Nothing happens
-                }else if(map[pos_x][pos_y] == 3){ // Prize is in new position
+                
+                } else if(map[pos_x][pos_y] == 3){ // Prize is in new position
                     
-                    map[pos_x][pos_y] = 32; // Mark position: bot & prize
+                //     map[pos_x][pos_y] = 32; // Mark position: bot & prize
                     
-                    /* Delete old place*/
-                    map[old_pos_x][old_pos_y] = 0;
-                    wmove(my_win, old_pos_x, old_pos_y);
-                    waddch(my_win,' ');
-                    /*Update new position*/
-                    bot_data[ch_pos].pos_x = pos_x;
-                    bot_data[ch_pos].pos_y = pos_y;
-                    wmove(my_win, pos_x, pos_y);
-                    waddch(my_win,ch| A_BOLD);
-                }
-                else if(map[old_pos_x][pos_y] == 32){ //Old place was prize, new place is bot
+                //     /* Delete old place*/
+                //     map[old_pos_x][old_pos_y] = 0;
+                //     wmove(my_win, old_pos_x, old_pos_y);
+                //     waddch(my_win,' ');
+                //     /*Update new position*/
+                //     bot_data[ch_pos].pos_x = pos_x;
+                //     bot_data[ch_pos].pos_y = pos_y;
+                //     wmove(my_win, pos_x, pos_y);
+                //     waddch(my_win,ch| A_BOLD);
+                // }
+                // else if(map[old_pos_x][pos_y] == 32){ //Old place was prize, new place is bot
                     
-                    /* Delete old place and replace prize*/
-                    map[old_pos_x][old_pos_y] = 3;
-                    wmove(my_win, old_pos_x, old_pos_y);
-                    waddch(my_win,' ');
+                //     /* Delete old place and replace prize*/
+                //     map[old_pos_x][old_pos_y] = 3;
+                //     wmove(my_win, old_pos_x, old_pos_y);
+                //     waddch(my_win,' ');
 
-                    for(i = 0 ; i < MAX_ARRAY; i++){
-                        if(prizes_data[i].pos_x == old_pos_x && prizes_data[i].pos_y == old_pos_y){
-                            // Draw prize in previous position
-                            wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
-                            waddch(my_win,prizes_data[i].ch| A_BOLD);
-                            wrefresh(my_win);
-                        }
-                    }
+                //     for(i = 0 ; i < MAX_ARRAY; i++){
+                //         if(prizes_data[i].pos_x == old_pos_x && prizes_data[i].pos_y == old_pos_y){
+                //             // Draw prize in previous position
+                //             wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
+                //             waddch(my_win,prizes_data[i].ch| A_BOLD);
+                //             wrefresh(my_win);
+                //         }
+                //     }
 
-                    /* Update new position */
-                    client_data[ch_pos].pos_x = pos_x;
-                    client_data[ch_pos].pos_y = pos_y;
-                    map[pos_x][pos_y] = 2;
-                    wmove(my_win, pos_x, pos_y);
-                    waddch(my_win,ch| A_BOLD);
-
+                //     /* Update new position */
+                //     client_data[ch_pos].pos_x = pos_x;
+                //     client_data[ch_pos].pos_y = pos_y;
+                //     map[pos_x][pos_y] = 2;
+                //     wmove(my_win, pos_x, pos_y);
+                //     waddch(my_win,ch| A_BOLD);
 
                 }else{ // New position is completely free
-                    
+                // int y=0;
+                //     if(msg.direction== UP)
+                //         y =1;
+                //     else if(msg.direction == DOWN)
+                //         y=2;
+                //     else if(msg.direction == LEFT)
+                //         y=3;
+                //     else if(msg.direction == RIGHT)
+                //         y=4;
+
+                    //mvwprintw(message_win, 3,1,"HERE %d", y);
+                    wrefresh(message_win);
+
                     /* Delete old place*/
                     map[old_pos_x][old_pos_y] = 0;
                     wmove(my_win, old_pos_x, old_pos_y);
                     waddch(my_win,' ');
                     /* Update new position */
-                    client_data[ch_pos].pos_x = pos_x;
-                    client_data[ch_pos].pos_y = pos_y;
+                    bot_data[ch_pos].pos_x = pos_x;
+                    bot_data[ch_pos].pos_y = pos_y;
                     map[pos_x][pos_y] = 2;
                     wmove(my_win, pos_x, pos_y);
                     waddch(my_win,ch| A_BOLD);

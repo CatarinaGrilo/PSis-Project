@@ -24,30 +24,30 @@ void draw_player(WINDOW *win, player_position_t * player, int delete){
     }
     int p_x = player->x;
     int p_y = player->y;
-    wmove(win, p_y, p_x);
+    wmove(win, p_x, p_y);
     waddch(win,ch);
     wrefresh(win);
 }
 
 void move_player (player_position_t * player, int direction){
     if (direction == KEY_UP){
-        if (player->y  != 1){
-            player->y --;
-        }
-    }
-    if (direction == KEY_DOWN){
-        if (player->y  != WINDOW_SIZE-2){
-            player->y ++;
-        }
-    }
-    if (direction == KEY_LEFT){
         if (player->x  != 1){
             player->x --;
         }
     }
-    if (direction == KEY_RIGHT)
+    if (direction == KEY_DOWN){
         if (player->x  != WINDOW_SIZE-2){
             player->x ++;
+        }
+    }
+    if (direction == KEY_LEFT){
+        if (player->y  != 1){
+            player->y --;
+        }
+    }
+    if (direction == KEY_RIGHT)
+        if (player->y  != WINDOW_SIZE-2){
+            player->y ++;
     }
 }
 
@@ -78,6 +78,12 @@ int main(){
 
     /* Open and link socket */
     int sock_fd;
+    char ADDRESS[20];
+
+    
+    printf("Put the Address of server: ");
+    scanf("%s",ADDRESS); 
+
     sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sock_fd == -1){
 	    perror("socket: ");
@@ -141,7 +147,7 @@ int main(){
     
 
 
-    new_player(&p1, ch, msg_rcv.player_position.y, msg_rcv.player_position.x );
+    new_player(&p1, ch, msg_rcv.player_position.x, msg_rcv.player_position.y);
     draw_player(my_win, &p1, true);
     // mvwprintw(message_win, 4,1,"%d %d", p1.x, p1.y);
     // wrefresh(message_win);
@@ -172,7 +178,13 @@ int main(){
                         mvwprintw(message_win, i+2,1,"%c %d ", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
                         wrefresh(my_win);
                     }else if(msg_rcv.clients[i].ch==ch){
+                        // p1.x=msg_rcv.clients[i].pos_x;
+                        // p1.y=msg_rcv.clients[i].pos_y;
+                        
+                        wmove(my_win, msg_rcv.clients[i].pos_x, msg_rcv.clients[i].pos_y);
+                        waddch(my_win,msg_rcv.clients[i].ch);
                         mvwprintw(message_win, 1,1,"%c %d ", msg_rcv.clients[i].ch, msg_rcv.clients[i].health);
+                        wrefresh(my_win);
                     }
                     if(msg_rcv.bots[i].id !=-1){
                         wmove(my_win, msg_rcv.bots[i].pos_x, msg_rcv.bots[i].pos_y);
@@ -193,9 +205,9 @@ int main(){
         }
 
         /* Draw new position*/
-        draw_player(my_win, &p1, false);
-        move_player (&p1, key);
-        draw_player(my_win, &p1, true);
+        // draw_player(my_win, &p1, false);
+        // move_player (&p1, key);
+        // draw_player(my_win, &p1, true);
         wrefresh(message_win);	
     }
     if(key == 'q'){
