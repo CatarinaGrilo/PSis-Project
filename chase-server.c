@@ -11,14 +11,10 @@
 
 #include "chase.h"
 
-int map[WINDOW_SIZE][WINDOW_SIZE];
-//memset(map, 0, sizeof(int) * WINDOW_SIZE * WINDOW_SIZE);
-
 // 1 is a client
 // 2 is a bot
 // 3 is a prize
-
-
+int map[WINDOW_SIZE][WINDOW_SIZE] = {0};
 
 void new_position(int *x, int *y, direction direction){
     switch (direction)
@@ -112,6 +108,7 @@ int main(){
 
     srand(time(NULL));
 
+    /*Initialization*/
     for (int i = 0 ; i < MAX_ARRAY; i++){
         client_data[i].id = -1;
         client_data[i].ch = ' ';
@@ -179,11 +176,11 @@ int main(){
     } 
 
 
-    int ch, k = 0;
+    int ch;
     int pos_x, old_pos_x;
     int pos_y, old_pos_y;
     int n_bytes;
-    int ch_pos;
+    int ch_pos=-1;
     int indice;
     remote_char_t msg;
 
@@ -193,7 +190,6 @@ int main(){
 
     while (1){
 
-        //EVETY 5SEC PUT ONE MORE PRIZE : NOT WORKING I DONT KNOW WHY, THE CLOCK_PER_SEC
         end = time(NULL);
         time_spent = end - begin;
         //mvwprintw(my_win, 2,1,"here:%f", time_spent);
@@ -223,10 +219,11 @@ int main(){
         }
         /* Connect Message */
         if(msg.type == 0){
-            if(num_clients <= 10){
+            ch_pos = find_ch_info(client_data, msg.ch);
+            mvwprintw(message_win, 3,1,"%c %d", msg.ch, ch_pos);
+
+            if(num_clients < 10 && ch_pos ==-1){
                 ch = msg.ch;
-                //pos_x = WINDOW_SIZE/2;
-                //pos_y = WINDOW_SIZE/2;
                 do{
                     pos_x = rand() % (WINDOW_SIZE-2) + 1;
                     pos_y = rand() % (WINDOW_SIZE-2) + 1;
@@ -235,11 +232,7 @@ int main(){
                 /*Client is not a bot*/
                 if(ch != '*'){
                     /* Stores Information */
-                    indice = find_free_spot(client_data);
-                    
-                    //if (indice == -1){}
-                        /* Quando já há 10 clientes, decidir o que fazer*/
-                    
+                    indice = find_free_spot(client_data);                    
                     client_data[indice].id= num_clients;
                     client_data[indice].ch = ch;
                     client_data[indice].pos_x = pos_x;
@@ -280,6 +273,11 @@ int main(){
 
                 sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (const struct sockaddr *) &client_addr, client_addr_size);
+            }else{
+                /* Send Disconnect Message to client*/
+                msg.type = 5;
+                sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
+                    (const struct sockaddr *) &client_addr, client_addr_size);
             }
         }
         /* Ball Movement message */
@@ -353,29 +351,6 @@ int main(){
 
                     /* Send Field Status Message*/
                     msg = setupFieldStatusmessage(client_data, bot_data, prizes_data);
-                    //msg.type = 3;
-                    // for (int i = 0 ; i < MAX_ARRAY; i++){
-                    //     msg.clients[i].id = client_data[i].id;
-                    //     msg.clients[i].ch = client_data[i].ch;
-                    //     msg.clients[i].pos_x = client_data[i].pos_x;
-                    //     msg.clients[i].pos_y = client_data[i].pos_y;
-                    //     msg.clients[i].health = client_data[i].health;
-
-                    //     msg.bots[i].id = bot_data[i].id;
-                    //     msg.bots[i].ch = bot_data[i].ch;
-                    //     msg.bots[i].pos_x = bot_data[i].pos_x;
-                    //     msg.bots[i].pos_y = bot_data[i].pos_y;
-                    //     msg.bots[i].health = bot_data[i].health;
-
-                    //     msg.prizes[i].id = prizes_data[i].id;
-                    //     msg.prizes[i].ch = prizes_data[i].ch;
-                    //     msg.prizes[i].pos_x = prizes_data[i].pos_x;
-                    //     msg.prizes[i].pos_y = prizes_data[i].pos_y;
-                    //     msg.prizes[i].health = prizes_data[i].health;
-                    // }
-    
-
-                    //mvwprintw(my_win, 3,1,"BLA %d, %d\n", msg.clients[0].pos_y, msg.clients[0].pos_x);
                     sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (const struct sockaddr *) &client_addr, client_addr_size);
 
