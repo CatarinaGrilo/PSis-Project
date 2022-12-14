@@ -63,8 +63,6 @@ void print_direction(direction direction){
    return;
 }
 
-player_position_t p1;
-
 int main(){
 
     /* Open and link socket */
@@ -108,8 +106,6 @@ int main(){
         }while(msg_rcv.type != 1);
     }
     printf("Done\n");
-
-    new_player(&p1, ch); // acho q nao é assim
 
     while (1){
     

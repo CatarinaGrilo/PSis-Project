@@ -9,15 +9,9 @@
 
 WINDOW * message_win;
 
-
-typedef struct player_position_t{
-    int x, y;
-    char c;
-} player_position_t;
-
-void new_player (player_position_t * player, char c){
-    player->x = WINDOW_SIZE/2;
-    player->y = WINDOW_SIZE/2;
+void new_player (player_position_t * player, char c, int pos_x,  int pos_y){
+    player->x = pos_x;
+    player->y = pos_y;
     player->c = c;
 }
 
@@ -46,8 +40,6 @@ void move_player (player_position_t * player, int direction){
             player->y ++;
         }
     }
-    
-
     if (direction == KEY_LEFT){
         if (player->x  != 1){
             player->x --;
@@ -79,7 +71,6 @@ direction find_direction(int key){
 
     return i;
 }   
-
 
 player_position_t p1;
 
@@ -129,6 +120,7 @@ int main(){
         recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
     }while(msg_rcv.type != 1);
 
+
     
 
 	initscr();		    	/* Start curses mode 		*/
@@ -146,10 +138,13 @@ int main(){
     message_win = newwin(5, WINDOW_SIZE, WINDOW_SIZE, 0);
     box(message_win, 0 , 0);	
 	wrefresh(message_win);
+    
 
 
-    new_player(&p1, ch);
+    new_player(&p1, ch, msg_rcv.player_position.y, msg_rcv.player_position.x );
     draw_player(my_win, &p1, true);
+    // mvwprintw(message_win, 4,1,"%d %d", p1.x, p1.y);
+    // wrefresh(message_win);
 
     int key = -1;
     while(key != 27 && key!= 'q'){
@@ -163,7 +158,7 @@ int main(){
             sendto(sock_fd, &msg_send, sizeof(remote_char_t), 0, 
                 (const struct sockaddr *)&server_addr, sizeof(server_addr));
             recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
-            if(msg_rcv.type==3){
+            if(msg_rcv.type == 3){
                 wclear(my_win);
                 box(my_win, 0 , 0);
                 wrefresh(message_win);

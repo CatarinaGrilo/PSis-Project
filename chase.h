@@ -21,6 +21,11 @@ typedef enum direction{
     RIGHT
 } direction;
 
+typedef struct player_position_t{
+    int x, y;
+    char c;
+} player_position_t;
+
 /*  Message type:
     0 - Connect:            client -> server
     1 - Ball information:   server -> client
@@ -33,6 +38,7 @@ typedef struct remote_char_t{
     int type;
     char ch;
     int id;
+    player_position_t player_position;
     direction direction;
     ch_info_t clients[MAX_ARRAY];
     ch_info_t bots[MAX_ARRAY];
