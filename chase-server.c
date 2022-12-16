@@ -69,6 +69,76 @@ void remove_from_game(ch_info_t char_data[], int i){
     char_data[i].pos_y = 0;
 }
 
+void init_data(ch_info_t client_data[], ch_info_t bot_data[], ch_info_t prizes_data[]){
+    
+    for (int i = 0 ; i < MAX_ARRAY; i++){
+        client_data[i].id = -1;
+        client_data[i].ch = ' ';
+        bot_data[i].id = -1;
+        bot_data[i].ch = ' ';
+        prizes_data[i].id = -1;
+        prizes_data[i].ch = ' ';
+    }
+}
+
+void init_prizes(ch_info_t prizes_data[], int map[WINDOW_SIZE][WINDOW_SIZE], WINDOW * my_win){
+
+    int i = 0, j = 0;
+    while(i < MAX_ARRAY &&  j <5){
+        if(prizes_data[i].id==-1){
+            prizes_data[i].id = 1;
+            prizes_data[i].ch = rand() % 5 + 49;
+            prizes_data[i].pos_x = rand() % (WINDOW_SIZE-2) + 1;
+            prizes_data[i].pos_y = rand() % (WINDOW_SIZE-2) + 1;
+            map[prizes_data[i].pos_x][prizes_data[i].pos_y] = 3;
+            j++;
+        }
+        i++;
+    } 
+    for(i=0; i<MAX_ARRAY; i++){
+        if(prizes_data[i].id != -1){
+            wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
+            waddch(my_win,prizes_data[i].ch| A_BOLD);
+            wrefresh(my_win);
+        }
+    } 
+}
+
+void add_prizes(clock_t *begin, ch_info_t prizes_data[], int map[WINDOW_SIZE][WINDOW_SIZE], WINDOW * my_win){
+
+    int pos_x = 0, pos_y = 0;
+    int prizes_to_add = 0;
+    clock_t end = time(NULL);
+    double time_spent = end - *begin;
+    if(time_spent > 5){
+        int i=0; int j=0;
+        prizes_to_add = time_spent / 5;
+        while(i<MAX_ARRAY && j<prizes_to_add){
+            if(prizes_data[i].id == -1){
+                prizes_data[i].id = 1;
+                prizes_data[i].ch = rand() % 5 + 49;
+                do{
+                    pos_x = rand() % (WINDOW_SIZE-2) + 1;
+                    pos_y = rand() % (WINDOW_SIZE-2) + 1;
+                }while(map[pos_x][pos_y] != 0);
+                prizes_data[i].pos_x = pos_x;
+                prizes_data[i].pos_y = pos_y;
+                //prizes_data[i].pos_x = rand() % (WINDOW_SIZE-2) + 1;
+                //prizes_data[i].pos_y = rand() % (WINDOW_SIZE-2) + 1;
+                wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
+                waddch(my_win,prizes_data[i].ch| A_BOLD);
+                wrefresh(my_win);
+                j++;
+                map[prizes_data[i].pos_x][prizes_data[i].pos_y] = 3;
+            }
+            i++;
+        }
+        *begin = time(NULL);
+    }
+
+}
+
+
 remote_char_t setupFieldStatusmessage(ch_info_t client_data[], ch_info_t bot_data[],  ch_info_t prizes_data[]){
     
     remote_char_t msg;
@@ -102,21 +172,22 @@ int main(){
     ch_info_t bot_data[MAX_ARRAY];
     ch_info_t prizes_data[MAX_ARRAY];
     int num_clients = 0, num_bots = 0;
-    clock_t begin = time(NULL);;
+    clock_t begin = time(NULL);
     clock_t end;
     double time_spent;
+    int ch;
+    int pos_x, old_pos_x;
+    int pos_y, old_pos_y;
+    int n_bytes;
+    int ch_pos=-1;
+    int indice;
+    int i=0, j=0;
+    remote_char_t msg;
+    direction  direction;
+    struct sockaddr_un client_addr;
+    socklen_t client_addr_size = sizeof(struct sockaddr_un);
 
     srand(time(NULL));
-
-    /*Initialization*/
-    for (int i = 0 ; i < MAX_ARRAY; i++){
-        client_data[i].id = -1;
-        client_data[i].ch = ' ';
-        bot_data[i].id = -1;
-        bot_data[i].ch = ' ';
-        prizes_data[i].id = -1;
-        prizes_data[i].ch = ' ';
-    }
 
     /* Open and link socket */
     int sock_fd;
@@ -137,7 +208,6 @@ int main(){
 	    exit(-1);
     }
 
-
 	initscr();		    	/* Start curses mode 		*/
 	cbreak();				/* Line buffering disabled	*/
     keypad(stdscr, TRUE);   /* We get F1, F2 etc..		*/
@@ -153,64 +223,16 @@ int main(){
     box(message_win, 0 , 0);	
 	wrefresh(message_win);
 
-    /*inicialize prizes*/
-    int i=0, j=0;
-    while(i<MAX_ARRAY && j<5){
-        if(prizes_data[i].id==-1){
-            prizes_data[i].id = 1;
-            prizes_data[i].ch = rand() % 5 + 49;
-            prizes_data[i].pos_x = rand() % (WINDOW_SIZE-2) + 1;
-            prizes_data[i].pos_y = rand() % (WINDOW_SIZE-2) + 1;
-            map[prizes_data[i].pos_x][prizes_data[i].pos_y] = 3;
-            j++;
-            //mvwprintw(my_win, i+1,1,"%d %d %d ", prizes_data[i].ch, prizes_data[i].pos_x, prizes_data[i].pos_y);
-        }
-        i++;
-    } 
-    for(i=0; i<MAX_ARRAY; i++){
-        if(prizes_data[i].id!=-1){
-            wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
-            waddch(my_win,prizes_data[i].ch| A_BOLD);
-            wrefresh(my_win);
-        }
-    } 
+    /* Initialization of data structures */
+    init_data(client_data, bot_data, prizes_data);
 
-
-    int ch;
-    int pos_x, old_pos_x;
-    int pos_y, old_pos_y;
-    int n_bytes;
-    int ch_pos=-1;
-    int indice;
-    remote_char_t msg;
-
-    direction  direction;
-    struct sockaddr_un client_addr;
-    socklen_t client_addr_size = sizeof(struct sockaddr_un);
+    /* Inicialize prizes*/
+    init_prizes(prizes_data, map, my_win);
 
     while (1){
 
-        end = time(NULL);
-        time_spent = end - begin;
-        //mvwprintw(my_win, 2,1,"here:%f", time_spent);
-        if(time_spent > 5){
-            i=0; j=0;
-            while(i<MAX_ARRAY && j<1){
-                if(prizes_data[i].id==-1){
-                    prizes_data[i].id = 1;
-                    prizes_data[i].ch = rand() % 5 + 49;
-                    prizes_data[i].pos_x = rand() % (WINDOW_SIZE-2) + 1;
-                    prizes_data[i].pos_y = rand() % (WINDOW_SIZE-2) + 1;
-                    wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
-                    waddch(my_win,prizes_data[i].ch| A_BOLD);
-                    wrefresh(my_win);
-                    j++;
-                    map[prizes_data[i].pos_x][prizes_data[i].pos_y] = 3;
-                }
-                i++;
-            }
-            begin = time(NULL);
-        }
+        /* Add prizes every 5 seconds */
+        add_prizes(&begin, prizes_data, map, my_win);
 
         n_bytes = recvfrom(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (struct sockaddr *)&client_addr, &client_addr_size);
@@ -221,14 +243,13 @@ int main(){
         if(msg.type == 0){
             ch_pos = find_ch_info(client_data, msg.ch);
             mvwprintw(message_win, 3,1,"%c %d", msg.ch, ch_pos);
-
             if(num_clients < 10 && ch_pos ==-1){
                 ch = msg.ch;
                 do{
                     pos_x = rand() % (WINDOW_SIZE-2) + 1;
                     pos_y = rand() % (WINDOW_SIZE-2) + 1;
                 }while(map[pos_x][pos_y] != 0);
-
+                
                 /*Client is not a bot*/
                 if(ch != '*'){
                     /* Stores Information */
@@ -243,15 +264,14 @@ int main(){
                     /* draw mark on new position */
                     wmove(my_win, pos_x, pos_y);
                     waddch(my_win,ch| A_BOLD);
-                    mvwprintw(message_win, indice+1,1,"%c %d", client_data[indice].ch, client_data[indice].health);
+                    mvwprintw(message_win, indice+1,1,"%c %d",
+                        client_data[indice].ch, client_data[indice].health);
 
                 /*Client is a bot*/
                 }else if(ch == '*'){
                     mvwprintw(message_win, 2,1,"Bot Connect");
                     /* Stores Information */
                     indice = find_free_spot(bot_data);
-                    //if (indice == -1){}
-                        /* Quando já há 10 clientes, decidir o que fazer*/
 
                     bot_data[indice].id = msg.id;
                     bot_data[indice].ch = ch;
@@ -268,11 +288,9 @@ int main(){
                 msg.type = 1; 
                 msg.player_position.x = pos_x;
                 msg.player_position.y = pos_y;
-                // mvwprintw(message_win, 4,1,"%d %d", pos_x, pos_y);
-                // wrefresh(message_win);
-
                 sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (const struct sockaddr *) &client_addr, client_addr_size);
+
             }else{
                 /* Send Disconnect Message to client*/
                 msg.type = 5;
@@ -282,7 +300,7 @@ int main(){
         }
         /* Ball Movement message */
         else if(msg.type == 2){
-            if(msg.ch != '*'){
+            if(msg.ch != '*'){ // Ball
 
                 ch_pos = find_ch_info(client_data, msg.ch);
                 if(ch_pos != -1 && client_data[ch_pos].health > 0){
@@ -303,20 +321,23 @@ int main(){
                     if (map[pos_x][pos_y] == 1){ // Ball is in new position
                         for(i = 0 ; i < MAX_ARRAY; i++){
                         /* Ball rammed into another ball*/
-                            if(client_data[i].pos_x == pos_x && client_data[i].pos_y == pos_y && client_data[i].ch != ch){
+                            if(client_data[i].pos_x == pos_x && 
+                               client_data[i].pos_y == pos_y && client_data[i].ch != ch){
                                 if(client_data[i].health > 0)
                                     client_data[i].health--;
                                 if(client_data[ch_pos].health < 10)
                                     client_data[ch_pos].health++;
                                 // Print info about ball rammed into
-                                mvwprintw(message_win, i+1,1,"%c %d ", client_data[i].ch, client_data[i].health);
+                                mvwprintw(message_win, i+1,1,"%c %d ", 
+                                    client_data[i].ch, client_data[i].health);
                             }
                         }
                     }else if(map[pos_x][pos_y] == 2){ // Bot is in new position
                         // Nothing happens
                     }else if(map[pos_x][pos_y] == 3){ // Prize is in new position
                         for(i = 0 ; i < MAX_ARRAY; i++){
-                            if(prizes_data[i].pos_x == pos_x && prizes_data[i].pos_y == pos_y){
+                            if(prizes_data[i].pos_x == pos_x && 
+                               prizes_data[i].pos_y == pos_y){
                                 client_data[ch_pos].health += (prizes_data[i].ch-48);
                                 remove_from_game(prizes_data, i);
                                 map[pos_x][pos_y] = 1;
@@ -354,7 +375,8 @@ int main(){
                     sendto(sock_fd, &msg, sizeof(remote_char_t), 0, 
                         (const struct sockaddr *) &client_addr, client_addr_size);
 
-                    mvwprintw(message_win, ch_pos+1,1,"%c %d ", client_data[ch_pos].ch, client_data[ch_pos].health);
+                    mvwprintw(message_win, ch_pos+1,1,"%c %d ", 
+                        client_data[ch_pos].ch, client_data[ch_pos].health);
                 }
                 /* Send Health 0 Message*/
                 else if(ch_pos != -1 && client_data[ch_pos].health < 1 ){
@@ -395,53 +417,20 @@ int main(){
                 if (map[pos_x][pos_y] == 1){ // Ball is in new position
                     for(i = 0 ; i < MAX_ARRAY; i++){
                     /* Bot rammed into another ball*/
-                        if(client_data[i].pos_x == pos_x && client_data[i].pos_y == pos_y && client_data[i].ch != ch){
+                        if(client_data[i].pos_x == pos_x && 
+                           client_data[i].pos_y == pos_y && client_data[i].ch != ch){
                             if(client_data[i].health > 0)
                                 client_data[i].health--;
                             // Print info about ball rammed into
-                            mvwprintw(message_win, i+1,1,"%c %d ", client_data[i].ch, client_data[i].health);
+                            mvwprintw(message_win, i+1,1,"%c %d ", 
+                            client_data[i].ch, client_data[i].health);
                         }
                     }
                 }else if(map[pos_x][pos_y] == 2){ // Bot is in new position
                     // Nothing happens
                 
-                } else if(map[pos_x][pos_y] == 3){ // Prize is in new position
-                    
-                //     map[pos_x][pos_y] = 32; // Mark position: bot & prize
-                    
-                //     /* Delete old place*/
-                //     map[old_pos_x][old_pos_y] = 0;
-                //     wmove(my_win, old_pos_x, old_pos_y);
-                //     waddch(my_win,' ');
-                //     /*Update new position*/
-                //     bot_data[ch_pos].pos_x = pos_x;
-                //     bot_data[ch_pos].pos_y = pos_y;
-                //     wmove(my_win, pos_x, pos_y);
-                //     waddch(my_win,ch| A_BOLD);
-                // }
-                // else if(map[old_pos_x][pos_y] == 32){ //Old place was prize, new place is bot
-                    
-                //     /* Delete old place and replace prize*/
-                //     map[old_pos_x][old_pos_y] = 3;
-                //     wmove(my_win, old_pos_x, old_pos_y);
-                //     waddch(my_win,' ');
-
-                //     for(i = 0 ; i < MAX_ARRAY; i++){
-                //         if(prizes_data[i].pos_x == old_pos_x && prizes_data[i].pos_y == old_pos_y){
-                //             // Draw prize in previous position
-                //             wmove(my_win, prizes_data[i].pos_x, prizes_data[i].pos_y);
-                //             waddch(my_win,prizes_data[i].ch| A_BOLD);
-                //             wrefresh(my_win);
-                //         }
-                //     }
-
-                //     /* Update new position */
-                //     client_data[ch_pos].pos_x = pos_x;
-                //     client_data[ch_pos].pos_y = pos_y;
-                //     map[pos_x][pos_y] = 2;
-                //     wmove(my_win, pos_x, pos_y);
-                //     waddch(my_win,ch| A_BOLD);
-
+                }else if(map[pos_x][pos_y] == 3){ // Prize is in new position
+                    // Nothing happens
                 }else{ // New position is completely free
                 // int y=0;
                 //     if(msg.direction== UP)
@@ -453,13 +442,13 @@ int main(){
                 //     else if(msg.direction == RIGHT)
                 //         y=4;
 
-                    //mvwprintw(message_win, 3,1,"HERE %d", y);
                     wrefresh(message_win);
 
                     /* Delete old place*/
                     map[old_pos_x][old_pos_y] = 0;
                     wmove(my_win, old_pos_x, old_pos_y);
                     waddch(my_win,' ');
+
                     /* Update new position */
                     bot_data[ch_pos].pos_x = pos_x;
                     bot_data[ch_pos].pos_y = pos_y;
@@ -480,6 +469,7 @@ int main(){
                 pos_y = client_data[ch_pos].pos_y;
                 ch = client_data[ch_pos].ch;
                 map[pos_x][pos_y] = 0;
+                
                 /*deletes old place */
                 wmove(my_win, pos_x, pos_y);
                 waddch(my_win,' ');

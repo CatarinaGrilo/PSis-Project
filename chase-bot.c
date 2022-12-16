@@ -21,8 +21,7 @@ void new_player (player_position_t * player, char c){
 
 direction randomDirection(){
 
-    srand ( time(NULL) ); 
-    int randomnumber = rand() % 4;
+    int randomnumber = random() % 4;
     //printf("%d\n", randomnumber);
 
     if(randomnumber == 0)

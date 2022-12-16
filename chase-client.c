@@ -79,7 +79,6 @@ int main(){
     /* Open and link socket */
     int sock_fd;
     char ADDRESS[20];
-
     
     printf("Put the Address of server: ");
     scanf("%s",ADDRESS); 
@@ -125,14 +124,11 @@ int main(){
     do{
         recv(sock_fd, &msg_rcv, sizeof(remote_char_t), 0);
         if(msg_rcv.type == 5){
-        endwin();
-        printf("\n Received disconnect.\n\n");
-        exit(0);
+            printf("\n Received disconnect.\n\n");
+            exit(0);
         }
     }while(msg_rcv.type != 1);
 
-
-    
 
 	initscr();		    	/* Start curses mode 		*/
 	cbreak();				/* Line buffering disabled	*/
