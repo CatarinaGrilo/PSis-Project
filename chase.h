@@ -1,7 +1,9 @@
+#define SOCKET_NAME "/tmp/chaseGame"
 #define WINDOW_SIZE 20
 #define MAX_ARRAY 10
-#define SOCKET_NAME "/tmp/chaseGame"
-
+#define MAX_CLIENTS 10
+#define MAX_HEALTH 10 
+#define BOT_SLEEP 3000000 // 3 seconds
 
 /*  Message type:
     0 - client        
